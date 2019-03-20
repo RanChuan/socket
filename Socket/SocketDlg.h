@@ -62,4 +62,7 @@ public:
 	afx_msg void OnBnClickedClearRecvBox();
 	// 接收区清空按钮
 	CButton RecvBoxSlearBut;
+	afx_msg void OnEnChangeEdit3();
+	// UDP的端口号
+	CEdit NativPort;
 };

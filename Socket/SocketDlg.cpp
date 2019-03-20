@@ -67,6 +67,7 @@ void CSocketDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_EDIT3, RecvBox);
 	DDX_Control(pDX, IDC_COMBO2, TargetIP);
 	DDX_Control(pDX, IDC_BUTTON4, RecvBoxSlearBut);
+	DDX_Control(pDX, IDC_EDIT4, NativPort);
 }
 
 BEGIN_MESSAGE_MAP(CSocketDlg, CDialogEx)
@@ -79,6 +80,7 @@ BEGIN_MESSAGE_MAP(CSocketDlg, CDialogEx)
 	ON_MESSAGE(WK_RECEIVED, &CSocketDlg::OnWkReceived)
 	ON_BN_CLICKED(IDC_BUTTON3, &CSocketDlg::OnBnClickedUpData)
 	ON_BN_CLICKED(IDC_BUTTON4, &CSocketDlg::OnBnClickedClearRecvBox)
+	ON_EN_CHANGE(IDC_EDIT3, &CSocketDlg::OnEnChangeEdit3)
 END_MESSAGE_MAP()
 
 
@@ -145,7 +147,7 @@ BOOL CSocketDlg::OnInitDialog()
 	TargetIP.AddString(_T("255.255.255.255"));
 	TargetIP.SetCurSel(0);
 
-
+	NativPort.SetWindowText(_T("7000"));
 
 
 
@@ -231,7 +233,8 @@ void CSocketDlg::OnBnClickedHelp()
 			}
 			else
 			{
-				myip.port = 0;
+				NativPort.GetWindowText(buf);				
+				myip.port = _ttoi(buf);
 				PostThreadMessage(dwThreadID[0], WK_OPEN_UDP, 0, (LPARAM)&myip);
 				SetDlgItemText(IDC_BUTTON1, _T("断开网络"));
 			}
@@ -260,6 +263,7 @@ void CSocketDlg::OnBnClickedSend()
 	// TODO: 在此添加控件通知处理程序代码
 	CString buf;
 	SendBox.GetWindowText(buf);
+	for (int i = 0; i < 2048; i++) { sendstring[i] = 0; }
 	WideCharToMultiByte(CP_ACP, 0, buf, buf.GetLength(), sendstring, 2048, 0, 0);
 	TargetIP.GetWindowText(myip.ip);
 	myip.port = 12;
@@ -409,4 +413,15 @@ void CSocketDlg::OnBnClickedClearRecvBox()
 {
 	// TODO: 
 	RecvBox.SetWindowText(_T(""));
+}
+
+
+void CSocketDlg::OnEnChangeEdit3()
+{
+	// TODO:  如果该控件是 RICHEDIT 控件，它将不
+	// 发送此通知，除非重写 CDialogEx::OnInitDialog()
+	// 函数并调用 CRichEditCtrl().SetEventMask()，
+	// 同时将 ENM_CHANGE 标志“或”运算到掩码中。
+
+	// TODO:  在此添加控件通知处理程序代码
 }
