@@ -58,7 +58,7 @@ void ThisComm::CloseComm()
 
 
 //16½øÖÆ×ª×Ö·û´®
-void HexToAscii(unsigned char * pHex, unsigned char * pAscii, int nLen)
+static void HexToAscii(unsigned char * pHex, unsigned char * pAscii, int nLen)
 {
 	unsigned char Nibble[3];
 	int maxlength = nLen;

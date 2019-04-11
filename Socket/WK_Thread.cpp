@@ -243,12 +243,14 @@ int download_hex(CString buf)
 	HANDLE hfile;
 	DWORD filesize;//文件总长度
 	int ret = 0;
+	int error = 0;//记录是否出错
 	hfile = CreateFile(buf, GENERIC_READ, NULL, NULL, OPEN_EXISTING, NULL, NULL);
 	if (hfile == (HANDLE)-1)
 	{
 		rettxt = _T("打开文件失败：") + buf;
 		if (UpdataStruct.m_MainDialog)
 			UpdataStruct.m_MainDialog->SendMessage(WK_ERR_RETURN, (WPARAM)&rettxt, (LPARAM)0);
+		error = 1;
 		return 1;
 	}
 
@@ -274,6 +276,7 @@ int download_hex(CString buf)
 		if (UpdataStruct.m_MainDialog)
 			UpdataStruct.m_MainDialog->SendMessage(WK_ERR_RETURN, (WPARAM)&rettxt, (LPARAM)0);
 		delete[] bindata;
+		error = 2;
 		return 2;
 	}
 	if (hexaddr < 0x08002800)//程序地址不对
@@ -282,6 +285,7 @@ int download_hex(CString buf)
 		if (UpdataStruct.m_MainDialog)
 			UpdataStruct.m_MainDialog->SendMessage(WK_ERR_RETURN, (WPARAM)&rettxt, (LPARAM)0);
 		delete[] bindata;
+		error = 3;
 		return 3;
 	}
 
@@ -292,15 +296,16 @@ int download_hex(CString buf)
 		if (UpdataStruct.m_MainDialog)
 			UpdataStruct.m_MainDialog->SendMessage(WK_ERR_RETURN, (WPARAM)&rettxt, (LPARAM)0);
 		delete[] bindata;
+		error = 4;
 		return 4;
 	}
 
 
 
-	UpdataStruct.s.SetTimeOut(1000);//设置最大的接收超时为1秒
+	UpdataStruct.s.SetTimeOut(10000);//设置最大的接收超时为1秒
 
 	ipstruct nocareip;//保存返回的ip地址
-	char iapbuff[100] = { 0 };//保存返回的数据
+	char iapbuff[2048] = { 0 };//保存返回的数据
 	int iapbacklen;//实际接受到的数据长度
 	int iaptry;//重试次数
 	iaptry = 20;
@@ -315,9 +320,13 @@ int download_hex(CString buf)
 
 	if (ret)
 	{
-		rettxt = _T("端口设置失败") ;
-		if (UpdataStruct.m_MainDialog)
-			UpdataStruct.m_MainDialog->SendMessage(WK_ERR_RETURN, (WPARAM)&rettxt, (LPARAM)0);
+		if (error == 0)
+		{
+			rettxt = _T("端口设置失败") ;
+			if (UpdataStruct.m_MainDialog)
+				UpdataStruct.m_MainDialog->SendMessage(WK_ERR_RETURN, (WPARAM)&rettxt, (LPARAM)0);
+			error = 5;
+		}
 	}
 	else
 	{
@@ -325,43 +334,51 @@ int download_hex(CString buf)
 	}
 
 
-	char data[100];//一个数据包的数据
+	char data[2048];//一个数据包的数据
 	int packlen;//一个包数据的长度
 	packlen = cfg.my_enteriap((char *)data, filesize);//参数是要写入的数据长度
-	iaptry = 20;
+	iaptry = 2;
 	do
 	{
 		UpdataStruct.s.SendData((char *)data, packlen,UpdataStruct.decip.ip, UpdataStruct.decip.port);
+		iapbuff[0] = 0xff;
 		iapbuff[1] = 0;
-		UpdataStruct.s.ReadData(iapbuff, 100, nocareip, iapbacklen);
+		UpdataStruct.s.ReadData(iapbuff, 2048, nocareip, iapbacklen);
 		iaptry--;
 		if (iaptry == 0) break;
-	} while ((ret = cfg.my_checkreturn(iapbuff, 100)) != 0);
+	} while ((ret = cfg.my_checkreturn(iapbuff, 2048)) != 0);
 
 	if (ret)
 	{
-		rettxt = _T("握手失败，错误码为：")+ret;
-		if (UpdataStruct.m_MainDialog)
-			UpdataStruct.m_MainDialog->SendMessage(WK_ERR_RETURN, (WPARAM)&rettxt, (LPARAM)0);
+		if (error == 0)
+		{
+			rettxt = _T("握手失败，错误码为：")+ret;
+			if (UpdataStruct.m_MainDialog)
+				UpdataStruct.m_MainDialog->SendMessage(WK_ERR_RETURN, (WPARAM)&rettxt, (LPARAM)0);
+			error = 6;
+		}
 	}
 
 
 	//hfile = CreateFile(_T("F:\\川~\\GitHub\\WK_JZQ_V2.6\\byMyApp.bin"), GENERIC_ALL, NULL, NULL, CREATE_NEW, NULL, NULL);
 	
-
-	GetData(bindata,(unsigned char *) data, 44, 0);//重置静态变量
+	int definepacketlen = UpdataStruct.packetsize;
+	GetData(bindata,(unsigned char *) data, definepacketlen, 0);//重置静态变量
 	int num_all = 0;
 	int num_now = 0;
-	num_all = filesize / 44;
-	if (filesize % 44) num_all++;
+	num_all = filesize / definepacketlen;
+	if (filesize % definepacketlen) num_all++;
 	do
 	{
 		if (ret == 0)
 		{
+			rettxt.Format( _T("下载进度：%d/%d") , num_now ,num_all);
+			if (UpdataStruct.m_MainDialog)
+				UpdataStruct.m_MainDialog->SendMessage(WK_ERR_RETURN, (WPARAM)&rettxt, (LPARAM)num_now * 100 / num_all);
 			if (num_all == num_now) break;
 			num_now++;
-			for (int a = 0; a < 100; a++) { data[a] = 0; }
-			real_read = GetData(bindata, (unsigned char *)data, 44, filesize);
+			for (int a = 0; a < 2048; a++) { data[a] = 0; }
+			real_read = GetData(bindata, (unsigned char *)data, definepacketlen, filesize);
 			//WriteFile(hfile, data, real_read, &real_read, NULL);
 
 		}
@@ -370,20 +387,16 @@ int download_hex(CString buf)
 			
 			break;
 		}
-		rettxt.Format( _T("下载进度：%d/%d") , num_now ,num_all);
-		if (UpdataStruct.m_MainDialog)
-			UpdataStruct.m_MainDialog->SendMessage(WK_ERR_RETURN, (WPARAM)&rettxt, (LPARAM)num_now * 100 / num_all);
-		else break;
-		char lastdata[100] = { 0 };
+		char lastdata[2048] = { 0 };
 		for (int i = 0; i < packlen; i++) { lastdata[i] = data[i]; }
 		packlen = cfg.my_updataing(real_read, num_now, num_all, (unsigned char *)data);
-		iaptry = 20;
+		iaptry = 2;
 		do
 		{
 			if (ret == 0x000c)
 			{
-				UpdataStruct.s.SendData((char *)lastdata, packlen, UpdataStruct.decip.ip, UpdataStruct.decip.port);
-
+				//UpdataStruct.s.SendData((char *)lastdata, packlen, UpdataStruct.decip.ip, UpdataStruct.decip.port);
+				break;
 			}
 			else if (ret == 0x0006)
 			{
@@ -394,23 +407,27 @@ int download_hex(CString buf)
 				UpdataStruct.s.SendData((char *)data, packlen, UpdataStruct.decip.ip, UpdataStruct.decip.port);
 			}
 			iapbuff[1] = 0;
-			UpdataStruct.s.ReadData(iapbuff, 100, nocareip, iapbacklen);
+			UpdataStruct.s.ReadData(iapbuff, 2048, nocareip, iapbacklen);
 			iaptry--;
 			if (iaptry == 0) {
 				 break;
 			}
-		} while ((ret=cfg.my_checkreturn(iapbuff, 100)) != 0);
+		} while ((ret=cfg.my_checkreturn(iapbuff, 2048)) != 0);
 	}
 	while(1);
 	if (ret)
 	{
-		rettxt = _T("下载失败，错误码为：") + ret;
-		if (UpdataStruct.m_MainDialog)
-			UpdataStruct.m_MainDialog->SendMessage(WK_ERR_RETURN, (WPARAM)&rettxt, (LPARAM)0);
+		if (error == 0)
+		{
+			rettxt.Format(_T("下载失败：%X"), ret);
+			if (UpdataStruct.m_MainDialog)
+				UpdataStruct.m_MainDialog->SendMessage(WK_ERR_RETURN, (WPARAM)&rettxt, (LPARAM)0);
+			error = 7;
+		}
 	}
 	else
 	{
-		rettxt = _T("下载成功") + ret;
+		rettxt = _T("下载成功");
 		if (UpdataStruct.m_MainDialog)
 			UpdataStruct.m_MainDialog->SendMessage(WK_ERR_RETURN, (WPARAM)&rettxt, (LPARAM)0);
 	}

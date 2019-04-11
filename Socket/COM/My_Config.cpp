@@ -270,8 +270,8 @@ int my_config::my_enteriap(char *data,unsigned int datasize)
 
 int my_config::my_updataing(unsigned short length, unsigned short num_now, unsigned short num_all, unsigned char *buff)
 {
-	unsigned char data[100] = { 0 };
-	unsigned char recv[100] = { 0 };
+	unsigned char data[2048] = { 0 };
+	unsigned char recv[2048] = { 0 };
 	int ret = 0;
 	unsigned char crc[2];
 	data[0] = 0xff;
@@ -279,7 +279,7 @@ int my_config::my_updataing(unsigned short length, unsigned short num_now, unsig
 	data[2] = 0x00;
 	data[3] = 0x00;
 	data[4] = 0x05;
-	data[5] = 0;
+	data[5] = (length + 5)>>8;
 	data[6] = length+5;
 	data[7] = 0x03;//¸üÐÂ³ÌÐò
 	data[8] = num_now >> 8;
@@ -291,10 +291,10 @@ int my_config::my_updataing(unsigned short length, unsigned short num_now, unsig
 	{
 		data[12 + t] = buff[t];
 	}
-	Get_Crc16((unsigned char*)data, data[6] + 7, (u8*)crc);
-	data[data[6] + 7] = crc[0];
-	data[data[6] + 7 + 1] = crc[1];
-	ret = data[6] + 7 + 2;
+	Get_Crc16((unsigned char*)data, (length + 5) + 7, (u8*)crc);
+	data[(length + 5) + 7] = crc[0];
+	data[(length + 5) + 7 + 1] = crc[1];
+	ret = (length + 5) + 7 + 2;
 	for (t = 0; t <ret; t++)
 	{
 		buff[t] = data[t];

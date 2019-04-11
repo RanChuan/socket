@@ -65,4 +65,5 @@ public:
 	afx_msg void OnEnChangeEdit3();
 	// UDPµÄ¶Ë¿ÚºÅ
 	CEdit NativPort;
+	afx_msg void OnEnChangeEdit2();
 };

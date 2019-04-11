@@ -55,6 +55,7 @@ int Hex2Bin::hex2bin(unsigned char *bin, CString hex,DWORD *hexaddr,DWORD *binsi
 	DWORD binoffset = 0;
 	CString temp;//临时字符变量
 	DWORD char_num;//单行的字节个数
+	*hexaddr = 0;
 	while (!hex.IsEmpty())
 	{
 		offset = hex.Find(_T(":"), 0);//找到第一个":"出现的位置
@@ -74,6 +75,16 @@ int Hex2Bin::hex2bin(unsigned char *bin, CString hex,DWORD *hexaddr,DWORD *binsi
 				if (addr == 0x08002800)
 				{
 					*hexaddr = addr;
+				}
+				else if (*hexaddr == 0)
+				{
+
+				}
+				else if (addr- *hexaddr!= binoffset)//不是连续的程序段
+				{
+					*binsize = binoffset;
+					break;//转换已完成
+
 				}
 			}
 			else//格式有误

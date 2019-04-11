@@ -81,6 +81,7 @@ BEGIN_MESSAGE_MAP(CSocketDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON3, &CSocketDlg::OnBnClickedUpData)
 	ON_BN_CLICKED(IDC_BUTTON4, &CSocketDlg::OnBnClickedClearRecvBox)
 	ON_EN_CHANGE(IDC_EDIT3, &CSocketDlg::OnEnChangeEdit3)
+	ON_EN_CHANGE(IDC_EDIT2, &CSocketDlg::OnEnChangeEdit2)
 END_MESSAGE_MAP()
 
 
@@ -289,6 +290,7 @@ afx_msg LRESULT CSocketDlg::OnWkReceived(WPARAM wParam, LPARAM lParam)
 	RecvBox.GetWindowText(temp);
 	temp = temp + buf;
 	RecvBox.SetWindowText(temp);
+	RecvBox.LineScroll(RecvBox.GetLineCount());//滚动到最后一行
 	if (TargetIP.FindStringExact(0, srcip->ip) == CB_ERR)
 	{
 		TargetIP.AddString(srcip->ip);
@@ -417,6 +419,17 @@ void CSocketDlg::OnBnClickedClearRecvBox()
 
 
 void CSocketDlg::OnEnChangeEdit3()
+{
+	// TODO:  如果该控件是 RICHEDIT 控件，它将不
+	// 发送此通知，除非重写 CDialogEx::OnInitDialog()
+	// 函数并调用 CRichEditCtrl().SetEventMask()，
+	// 同时将 ENM_CHANGE 标志“或”运算到掩码中。
+
+	// TODO:  在此添加控件通知处理程序代码
+}
+
+
+void CSocketDlg::OnEnChangeEdit2()
 {
 	// TODO:  如果该控件是 RICHEDIT 控件，它将不
 	// 发送此通知，除非重写 CDialogEx::OnInitDialog()

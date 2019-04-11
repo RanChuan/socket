@@ -26,7 +26,9 @@ protected:
 public:
 	// 显示操作执行情况
 	CEdit CmdNote;
-	afx_msg void OnEnChangeMfceditbrowse1();
+	afx_msg
+		virtual BOOL OnInitDialog();
+	void OnEnChangeMfceditbrowse1();
 	// 从这里面打开程序文件
 	CMFCEditBrowseCtrl File;
 	afx_msg void OnBnClickedStartUpdata();
@@ -35,4 +37,7 @@ protected:
 public:
 	// 升级进度
 	CProgressCtrl upDataIng;
+	// 包大小设置
+	CEdit mPacketSize;
+	afx_msg void OnEnChangePacketSize();
 };

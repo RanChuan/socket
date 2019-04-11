@@ -21,6 +21,7 @@ struct wk_threadstruct
 	struct ipstruct srcip;
 	struct ipstruct decip;
 	MySocket s;
+	int packetsize;
 };
 
 

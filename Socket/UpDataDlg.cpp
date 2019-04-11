@@ -30,6 +30,7 @@ void UpDataDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_EDIT1, CmdNote);
 	DDX_Control(pDX, IDC_MFCEDITBROWSE1, File);
 	DDX_Control(pDX, IDC_PROGRESS1, upDataIng);
+	DDX_Control(pDX, IDC_EDIT2, mPacketSize);
 }
 
 
@@ -37,10 +38,32 @@ BEGIN_MESSAGE_MAP(UpDataDlg, CDialogEx)
 	ON_EN_CHANGE(IDC_MFCEDITBROWSE1, &UpDataDlg::OnEnChangeMfceditbrowse1)
 	ON_BN_CLICKED(IDC_BUTTON1, &UpDataDlg::OnBnClickedStartUpdata)
 	ON_MESSAGE(WK_ERR_RETURN, &UpDataDlg::OnWkErrReturn)
+	ON_EN_CHANGE(IDC_EDIT2, &UpDataDlg::OnEnChangePacketSize)
 END_MESSAGE_MAP()
 
 
+
+
+
+
+
+BOOL UpDataDlg::OnInitDialog()
+{
+	CDialogEx::OnInitDialog();
+	mPacketSize.SetWindowText(_T("44"));
+	CString buf;
+	mPacketSize.GetWindowText(buf);
+	UpdataStruct.packetsize = _ttoi(buf);
+	return TRUE;
+}
+
+
+
 // UpDataDlg 消息处理程序 
+
+
+
+
 
 
 void UpDataDlg::OnEnChangeMfceditbrowse1()
@@ -84,11 +107,30 @@ void UpDataDlg::OnBnClickedStartUpdata()
 		UpdataStruct.s.OpenUdp(UpdataStruct.srcip.ip, UpdataStruct.srcip.port);
 
 		File.GetWindowText(FileName);
-		CreateThread(NULL, 0, ThreadUpdataApp,
-			(LPVOID)&FileName,//专递socket的指针
-			0, &dwThreadID);
-		SetDlgItemText(IDC_BUTTON1, _T("停止下载"));
+		if (FileName.Right(4) == _T(".hex"))
+		{
+			CString buff;
+			mPacketSize.GetWindowText(buff);
+			int s = _ttoi(buff);
+			if (s > 2033)
+			{
+				s = 2033;
+			}
+			else if (s<44)
+			{
+				s = 44;
+			}
+			UpdataStruct.packetsize = _ttoi(buff);
 
+			CreateThread(NULL, 0, ThreadUpdataApp,
+				(LPVOID)&FileName,//专递socket的指针
+				0, &dwThreadID);
+			SetDlgItemText(IDC_BUTTON1, _T("停止下载"));
+		}
+		else
+		{
+			CmdNote.SetWindowText(_T("请选择适当的程序文件"));
+		}
 	}
 	else if (buf==_T("停止下载"))
 	{
@@ -111,10 +153,35 @@ afx_msg LRESULT UpDataDlg::OnWkErrReturn(WPARAM wParam, LPARAM lParam)
 	upDataIng.SetStep((down + up) / 100);
 	upDataIng.SetPos((int)lParam);
 	CmdNote.SetWindowText(*txtbuf);
-	if ((*txtbuf).Left(4) == _T("下载成功"))
+	if (((*txtbuf).Left(4) == _T("下载成功"))|| ((*txtbuf).Left(4) == _T("下载失败")))
 	{
+		upDataIng.SetPos((int)100);
 		UpdataStruct.s.End();
 		SetDlgItemText(IDC_BUTTON1, _T("开始下载"));
 	}
 	return 0;
+}
+
+
+void UpDataDlg::OnEnChangePacketSize()
+{
+	// TODO:  如果该控件是 RICHEDIT 控件，它将不
+	// 发送此通知，除非重写 CDialogEx::OnInitDialog()
+	// 函数并调用 CRichEditCtrl().SetEventMask()，
+	// 同时将 ENM_CHANGE 标志“或”运算到掩码中。
+
+	// TODO:  在此添加控件通知处理程序代码
+	CString buf;
+	mPacketSize.GetWindowText(buf);
+	int s = _ttoi(buf);
+	if (s > 2033)
+	{
+		//mPacketSize.SetWindowText(_T("2033"));
+	}
+	else if (s<44)
+	{
+		//mPacketSize.SetWindowText(_T("44"));
+	}
+	UpdataStruct.packetsize = _ttoi(buf);
+
 }
